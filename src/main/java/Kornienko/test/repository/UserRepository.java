@@ -7,6 +7,7 @@ import Kornienko.test.model.User;
 import Kornienko.test.model.UserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,6 +31,7 @@ public class UserRepository {
         this.dataSourceConfig = dataSourceConfig;
     }
 
+    @Transactional
     public List<User> getUsers(UserRequest userRequest) {
         List<User> users = new ArrayList<>();
         try {
@@ -95,7 +97,7 @@ public class UserRepository {
             userRequest.getFilters().forEach((key, value) -> {
                 if (mapping.containsKey(key)) {
                     if (!isFirst.get()) {
-                        query.append(mapping.get(key)).append(" AND ");
+                        query.append(" AND ");
                     } else {
                         isFirst.set(false);
                     }
