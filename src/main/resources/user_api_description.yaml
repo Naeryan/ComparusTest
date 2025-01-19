@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: Users API Specification
+  description: |-
+    A simple users API that allows two get users
+  version: 1.0-SNAPSHOT
+servers:
+  - url: https://localhost:8080/api/v1
+tags:
+  - name: users
+    description: Operations with users
+
+paths:
+  /users:
+    get:
+      tags:
+        - users
+      summary: Get users information
+      description: Get all users information
+      operationId: getUsers
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
