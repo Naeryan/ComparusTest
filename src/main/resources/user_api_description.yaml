@@ -18,13 +18,22 @@ paths:
       summary: Get users information
       description: Get all users information
       operationId: getUsers
+      requestBody:
+        description: Filters for getting users
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
       responses:
         200:
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
 
 components:
   schemas:
@@ -39,3 +48,10 @@ components:
           type: string
         surname:
           type: string
+    UserRequest:
+      type: object
+      properties:
+        filters:
+          type: object
+          additionalProperties:
+            type: string

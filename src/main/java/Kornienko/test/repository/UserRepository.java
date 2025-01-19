@@ -4,6 +4,7 @@ import Kornienko.test.config.DataSourceConfig;
 import Kornienko.test.config.UserDataSources;
 import Kornienko.test.model.DataSource;
 import Kornienko.test.model.User;
+import Kornienko.test.model.UserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -14,6 +15,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Repository
 public class UserRepository {
@@ -27,12 +30,12 @@ public class UserRepository {
         this.dataSourceConfig = dataSourceConfig;
     }
 
-    public List<User> getUsers() {
+    public List<User> getUsers(UserRequest userRequest) {
         List<User> users = new ArrayList<>();
         try {
             List<Connection> connections = userDataSources.getConnections();
             for (Connection connection : connections) {
-                users.addAll(getUsersFromDb(connection));
+                users.addAll(getUsersFromDb(connection, userRequest));
                 connection.close();
             }
         } catch (SQLException e) {
@@ -42,7 +45,7 @@ public class UserRepository {
         return users;
     }
 
-    private List<User> getUsersFromDb(Connection connection) throws SQLException {
+    private List<User> getUsersFromDb(Connection connection, UserRequest userRequest) throws SQLException {
         String url = connection.getMetaData().getURL();
         DataSource dataSource = dataSourceConfig.getDataSources().stream()
                 .filter(config -> url.startsWith(config.getUrl()))
@@ -50,7 +53,8 @@ public class UserRepository {
 
         List<User> users = new ArrayList<>();
         try {
-            PreparedStatement statement = connection.prepareStatement(getUserSQL(dataSource.getTable(), dataSource.getMapping()));
+            PreparedStatement statement = connection.prepareStatement(
+                    getUserSQL(dataSource.getTable(), dataSource.getMapping(), userRequest));
             ResultSet resultSet = statement.executeQuery();
             while (resultSet.next()) {
                 User user = new User();
@@ -67,7 +71,7 @@ public class UserRepository {
         return users;
     }
 
-    private String getUserSQL(String tableName, Map<String, String> mapping) {
+    private String getUserSQL(String tableName, Map<String, String> mapping, UserRequest userRequest) {
         StringBuilder query = new StringBuilder();
         query.append("SELECT ");
         if (mapping.containsKey("id")) {
@@ -83,6 +87,22 @@ public class UserRepository {
             query.append(mapping.get("surname")).append(" AS surname ");
         }
         query.append("FROM ").append(tableName);
+
+        if (Objects.nonNull(userRequest) && !userRequest.getFilters().isEmpty() &&
+                userRequest.getFilters().keySet().stream().anyMatch(mapping::containsKey)) {
+            AtomicBoolean isFirst = new AtomicBoolean(true);
+            query.append(" WHERE ");
+            userRequest.getFilters().forEach((key, value) -> {
+                if (mapping.containsKey(key)) {
+                    if (!isFirst.get()) {
+                        query.append(mapping.get(key)).append(" AND ");
+                    } else {
+                        isFirst.set(false);
+                    }
+                    query.append(mapping.get(key)).append(" = '").append(value).append("' ");
+                }
+            });
+        }
         return query.toString();
     }
 

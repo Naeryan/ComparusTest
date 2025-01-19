@@ -2,6 +2,7 @@ package Kornienko.test.controller;
 
 import Kornienko.test.api.UsersApi;
 import Kornienko.test.model.User;
+import Kornienko.test.model.UserRequest;
 import Kornienko.test.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +17,8 @@ public class UserController implements UsersApi {
     private UserRepository userRepository;
 
     @Override
-    public ResponseEntity<List<User>> getUsers() {
-        return ResponseEntity.ok(userRepository.getUsers());
+    public ResponseEntity<List<User>> getUsers(UserRequest userRequest) {
+        return ResponseEntity.ok(userRepository.getUsers(userRequest));
     }
 
 }
